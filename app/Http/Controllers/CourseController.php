@@ -21,7 +21,9 @@ class CourseController extends Controller
      */
     public function store(StoreCourseRequest $request)
     {
-        //
+        $course = tap(Course::create($request->validated()), fn ($course) => $course->students()->sync($request->students));
+
+        return response()->json(compact('course'), 201);
     }
 
     /**
