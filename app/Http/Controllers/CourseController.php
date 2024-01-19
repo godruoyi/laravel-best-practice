@@ -43,7 +43,10 @@ class CourseController extends Controller
      */
     public function update(UpdateCourseRequest $request, Course $course)
     {
-        //        $course->update()
+        $course->update($request->validated());
+        $course->students()->sync($request->students);
+
+        return response()->noContent();
     }
 
     /**

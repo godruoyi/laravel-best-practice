@@ -160,3 +160,35 @@ it('show course detail', function () {
             ],
         ]);
 });
+
+it('update course success', function () {
+    Course::factory()
+        ->has(Student::factory()->count(2))
+        ->forTeacher()
+        ->create();
+
+    $this->putJson(route('courses.update', 1))
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['name', 'students']);
+
+    $this->assertDatabaseCount(Student::class, 2);
+    Student::factory()->count(2)->create(); // renew 2 students
+
+    $course = [
+        'name' => 'Laravel',
+        'description' => 'The Best Laravel Course',
+        'teacher_id' => 999, // cannot update teacher
+        'students' => [1, 3],
+    ];
+
+    $this->putJson(route('courses.update', 1), $course)
+        ->assertNoContent();
+
+    $course = Course::first();
+
+    expect($course)
+        ->students->toHaveCount(2)
+        ->students->each->id->toBeIn([1, 3])
+        ->name->toBe('Laravel')
+        ->teacher->id->toBe(1);
+});
