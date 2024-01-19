@@ -5,15 +5,19 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreCourseRequest;
 use App\Http\Requests\UpdateCourseRequest;
 use App\Models\Course;
+use Illuminate\Http\Request;
 
 class CourseController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        return Course::when($request->name, fn ($query, $name) => $query->where('name', 'like', "%{$name}%"))
+            ->withCount('students')
+            ->with('teacher')
+            ->paginate($request->per_page ?? 10);
     }
 
     /**
@@ -39,7 +43,7 @@ class CourseController extends Controller
      */
     public function update(UpdateCourseRequest $request, Course $course)
     {
-        //
+        //        $course->update()
     }
 
     /**

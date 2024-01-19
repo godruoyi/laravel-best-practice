@@ -79,3 +79,60 @@ it('create course successfully with 1 students', function () {
         ->students->first()->name->toBe('Bob')
         ->teacher->name->toBe('Godruoyi');
 });
+
+it('can load empty course list', function () {
+    $this->getJson(route('courses.index'))
+        ->assertStatus(200)
+        ->assertJsonPath('data', [])
+        ->assertJsonPath('total', 0)
+        ->assertJsonPath('per_page', 10);
+});
+
+it('load one courses', function () {
+    Course::factory()
+        ->has(Student::factory()->count(2))
+        ->forTeacher()
+        ->create();
+
+    $this->assertDatabaseCount(Course::class, 1);
+    $this->assertDatabaseCount(Student::class, 2);
+    $this->assertDatabaseCount(Teacher::class, 1);
+    $this->assertDatabaseCount('course_student', 2);
+
+    $this->getJson(route('courses.index'))
+        ->assertStatus(200)
+        ->assertJsonPath('data.0.id', 1)
+        ->assertJsonPath('data.0.students_count', 2) // students count
+        ->assertJsonIsObject('data.0.teacher')
+        ->assertJsonPath('total', 1)
+        ->assertJsonPath('per_page', 10);
+});
+
+it('show one course when query by name', function () {
+    Course::factory()
+        ->has(Student::factory()->count(2))
+        ->forTeacher()
+        ->sequence(['name' => 'Laravel'], ['name' => 'Python'])
+        ->count(2)
+        ->create();
+
+    $this->assertDatabaseCount(Course::class, 2);
+    $this->assertDatabaseCount(Student::class, 4);
+    $this->assertDatabaseCount(Teacher::class, 1);
+    $this->assertDatabaseCount('course_student', 4);
+
+    $this->getJson(route('courses.index', ['per_page' => 3]))
+        ->assertJsonPath('total', 2)
+        ->assertJsonCount(2, 'data')
+        ->assertJsonPath('per_page', 3);
+
+    $this->getJson(route('courses.index', ['per_page' => 15, 'name' => 'Lar']))
+        ->assertJsonPath('total', 1)
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('per_page', 15);
+
+    $this->getJson(route('courses.index', ['per_page' => 3, 'name' => 'LL']))
+        ->assertJsonPath('total', 0)
+        ->assertJsonCount(0, 'data')
+        ->assertJsonPath('per_page', 3);
+});
