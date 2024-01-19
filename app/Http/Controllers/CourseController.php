@@ -35,7 +35,7 @@ class CourseController extends Controller
      */
     public function show(Course $course)
     {
-        //
+        return $course->load('teacher:id,name', 'students:id,name');
     }
 
     /**

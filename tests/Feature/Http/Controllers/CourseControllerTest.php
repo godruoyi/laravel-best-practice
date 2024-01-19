@@ -136,3 +136,27 @@ it('show one course when query by name', function () {
         ->assertJsonCount(0, 'data')
         ->assertJsonPath('per_page', 3);
 });
+
+it('show course detail', function () {
+    $this->getJson(route('courses.show', 1))->assertNotFound();
+
+    Course::factory()
+        ->has(Student::factory()->count(2))
+        ->forTeacher()
+        ->create();
+
+    $this->getJson(route('courses.show', 1))
+        ->assertOk()
+        ->assertJsonPath('id', 1)
+        ->assertJsonIsArray('students')
+        ->assertJsonIsObject('teacher')
+        ->assertJsonCount(2, 'students')
+        ->assertJsonStructure([
+            'students' => [
+                ['id', 'name'],
+            ],
+            'teacher' => [
+                'id', 'name',
+            ],
+        ]);
+});
